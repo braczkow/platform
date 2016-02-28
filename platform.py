@@ -1,20 +1,21 @@
 import socket
-import platform_utils as pu
 
-platform_IP = pu.get_ip_address('eth0')
+platform_IP = '192.168.1.68'
 
 print 'platform_IP: ' + platform_IP
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+print 'socket created.'
 
-sock.bind(platform_IP, 8888)
+sock.bind((platform_IP, 8888))
+print 'socket bound'
 
 sock.listen(1)
+print 'socket listen.'
 
 while True:
     print 'wait for client'
     connection, client_address = sock.accept()
-    
     try:
         print 'connection from', client_address
 
