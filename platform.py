@@ -18,6 +18,7 @@ def start_platform_HB(connection):
     return HB_thread
 
 def server_worker(platform_IP, platform_port):
+    print 'server_worker'
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.bind((platform_IP, platform_port))
     sock.listen(1)
