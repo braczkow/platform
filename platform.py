@@ -1,33 +1,30 @@
 import socket
 import platform_utils as pu
 
-myIp = pu.get_ip_address('eth0')
+platform_IP = pu.get_ip_address('eth0')
 
+print 'platform_IP: ' + platform_IP
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-server_address = (myIp, 8888)
-print 'starting up on %s port %s' % server_address
-sock.bind(server_address)
+sock.bind(platform_IP, 8888)
 
 sock.listen(1)
 
 while True:
-    print 'waiting for a connection'
+    print 'wait for client'
     connection, client_address = sock.accept()
     
     try:
         print 'connection from', client_address
 
-        # Receive the data in small chunks and retransmit it
         while True:
             data = connection.recv(16)
-            print 'received "%s"' % data
+            print 'received: ' + data
             if data:
-                print 'sending data back to the client'
-                connection.sendall(data)
+                pass
             else:
-                print 'no more data from', client_address
+                print 'no data', client_address
                 break
             
     finally:
