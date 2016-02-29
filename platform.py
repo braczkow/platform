@@ -1,45 +1,11 @@
 import socket
-import platform_utils as pu
+import sys
+import json
 from threading import Thread
 from time import sleep
 
-HB_threads = []
-machines = []
+import platform_HB
 
-def platform_HB_worker(connection):
-    while True:
-        data = connection.recv(256)
-        print 'data: ' + data
-              
-        
-def start_platform_HB(connection):
-    print "Starting platform_HB thread"
-    HB_thread = Thread(target = platform_HB_worker, args=[connection])
-    HB_thread.start()
-    return HB_thread
-
-def server_worker(platform_IP, platform_port):
-    print 'server_worker'
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind((platform_IP, platform_port))
-    sock.listen(1)
-    
-    while True:
-        print 'wait for client'
-        connection, client_address = sock.accept()
-        print 'accepted from: ' + str(client_address)
-        global machines
-        machines.append(client_address)
-        
-        global HB_threads
-        HB_threads.append( start_platform_HB(connection) )
-        
-
-def start_server(platform_IP, platform_port):
-    print 'starting server'
-    server_thread = Thread(target = server_worker, args=[platform_IP, platform_port])
-    server_thread.start()
-    return server_thread
 
 def do_ping(mach_address):
     try:
@@ -50,7 +16,7 @@ def do_ping(mach_address):
 
     print 'ping socket created'
     
-    s.connect((mach_address , int(platform_port))) 
+    s.connect((mach_address , int(platform_HB_port))) 
     print 'ping socket connected'
     
     message = '["ping"]'
@@ -62,42 +28,64 @@ def ping_machine():
     print 'available machines:'
     machid = 0
     for m in machines:
-        print str(machid) + ' : ' + m
+        print str(machid) + ' : ' + str(m)
         machid += 1
         
     machid_raw = raw_input('select: ')   
     mach = int(machid_raw)
-    mach_address = machines[mach]
+    mach_address = machines[mach][0]
     
     print 'selected machine IP: ' + mach_address
     
     do_ping(mach_address)
     
     
+# platform_IP = pu.get_ip_address('eth0')
+
+config = None
+
+try:
+    config_file_name = "platform.config"
+    config_file = open(config_file_name)
+    config = json.load(config_file)
+except:
+    print 'Cannot read config.json. Bye bye.'
+    sys.exit()
+
+if not 'platform_IP' in config:
+    print 'platform_IP not configured. Bye bye.'
+    sys.exit()
+
+if not 'platform_port' in config:
+    print 'platform_port not configured. Bye bye.'
+    sys.exit()
 
 
-platform_IP = pu.get_ip_address('eth0')
-platform_port = 8888
+platform_HB_IP = config['platform_IP']
+platform_HB_port = int(config['platform_port'])
 
-print 'IP: ' + platform_IP
+print 'IP: ' + platform_HB_IP
+print 'port: ' + str(platform_HB_port)
 
-server_thread = start_server(platform_IP, platform_port)
+HB_server_thread = platform_HB.start_HB_server(platform_HB_IP, platform_HB_port)
 
 do_continue = True
 
 while do_continue:
     option = raw_input( 'Options:\n-q: quit\n-p: ping machine' )
     if option == 'q':
+        platform_HB.stop_HB_server()
         do_continue = False
+        
     elif option == 'p':
         ping_machine()
     else:
         print 'unknown option'
     
-    
 
 
-server_thread.join()
+
+HB_server_thread.join()
 
 print 'Bye bye.'
 
